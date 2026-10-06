@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- 3D scene files live in src/components/game/; vite.config strips dev-only `data-tsd-source` there because React Three Fiber crashes on dashed props.
