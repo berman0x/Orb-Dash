@@ -3,7 +3,8 @@ import { Environment, Lightformer } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-const LANES = [-2.2, 0, 2.2];
+const LANE_X = [-2.2, 0, 2.2];
+const laneX = (l: number) => LANE_X[l] ?? 0;
 const SPAWN_Z = -80;
 const GRAVITY = 32;
 const JUMP_V = 11;
@@ -48,7 +49,7 @@ function World({ s, onTick, onOver }: { s: React.MutableRefObject<Shared>; onTic
       g.score += dz * 0.5;
 
       // player
-      g.x += (LANES[g.lane] - g.x) * (1 - Math.exp(-14 * dt));
+      g.x += (laneX(g.lane) - g.x) * (1 - Math.exp(-14 * dt));
       g.vy -= GRAVITY * dt;
       g.y += g.vy * dt;
       if (g.y < 0.6) { g.y = 0.6; g.vy = 0; }
@@ -57,7 +58,7 @@ function World({ s, onTick, onOver }: { s: React.MutableRefObject<Shared>; onTic
       let changed = false;
       for (const t of g.things) {
         t.z += dz;
-        if (!t.hit && Math.abs(t.z) < 0.9 && Math.abs(LANES[t.lane] - g.x) < 1.1) {
+        if (!t.hit && Math.abs(t.z) < 0.9 && Math.abs(laneX(t.lane) - g.x) < 1.1) {
           if (t.kind === "gem") { t.hit = true; g.score += 25; changed = true; }
           else if (t.kind === "block" || (t.kind === "bar" && g.y < 1.4)) {
             g.phase = "over"; onOver();
@@ -95,9 +96,9 @@ function World({ s, onTick, onOver }: { s: React.MutableRefObject<Shared>; onTic
     }
     if (group.current) {
       for (const child of group.current.children) {
-        const t = g.things.find((x) => x.id === child.userData.id);
+        const t = g.things.find((x) => x.id === child.userData["id"]);
         if (t) child.position.z = t.z;
-        if (child.userData.gem) child.rotation.y += dt * 3;
+        if (child.userData["gem"]) child.rotation.y += dt * 3;
       }
     }
     if (stripes.current) stripes.current.position.z = (g.dist % 6);
@@ -144,17 +145,17 @@ function World({ s, onTick, onOver }: { s: React.MutableRefObject<Shared>; onTic
       <group ref={group}>
         {s.current.things.map((t) =>
           t.kind === "gem" ? (
-            <mesh key={t.id} userData={{ id: t.id, gem: true }} position={[LANES[t.lane], 0.9, t.z]} castShadow>
+            <mesh key={t.id} userData={{ id: t.id, gem: true }} position={[laneX(t.lane), 0.9, t.z]} castShadow>
               <octahedronGeometry args={[0.4]} />
               <meshStandardMaterial color="#ffd23f" emissive="#ffb400" emissiveIntensity={0.4} metalness={0.3} roughness={0.2} />
             </mesh>
           ) : t.kind === "bar" ? (
-            <mesh key={t.id} userData={{ id: t.id }} position={[LANES[t.lane], 0.4, t.z]} castShadow>
+            <mesh key={t.id} userData={{ id: t.id }} position={[laneX(t.lane), 0.4, t.z]} castShadow>
               <boxGeometry args={[1.9, 0.6, 0.5]} />
               <meshStandardMaterial color="#6c63c7" roughness={0.5} />
             </mesh>
           ) : (
-            <mesh key={t.id} userData={{ id: t.id }} position={[LANES[t.lane], 1, t.z]} castShadow>
+            <mesh key={t.id} userData={{ id: t.id }} position={[laneX(t.lane), 1, t.z]} castShadow>
               <boxGeometry args={[1.8, 2, 1.2]} />
               <meshStandardMaterial color="#2f4858" roughness={0.6} />
             </mesh>
