@@ -18,7 +18,7 @@ const schema = z.object({
 export type ChallengeResult = { ok: true; challenge: Challenge } | { ok: false; error: string };
 
 export async function generateChallenge(targetScore: number, style: string): Promise<ChallengeResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return { ok: false, error: "AI is not configured." };
   const provider = createOpenAI({
     baseURL: "https://ai.gateway.lovable.dev/v1",
