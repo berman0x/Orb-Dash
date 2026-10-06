@@ -142,3 +142,20 @@
     color: var(--color-foreground);
   }
 }
+
+:root {
+  --game-ink: oklch(0.32 0.05 230);
+  --game-coral: oklch(0.72 0.17 40);
+  --game-cream: oklch(0.97 0.03 80);
+}
+.game-root { position: fixed; inset: 0; touch-action: none; user-select: none; overflow: hidden; font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+.game-hud { position: absolute; top: 0; left: 0; right: 0; padding: 1.25rem; text-align: center; pointer-events: none; color: var(--game-ink); }
+.game-score { font-size: 3rem; font-weight: 900; line-height: 1; }
+.game-best { font-size: .85rem; letter-spacing: .2em; text-transform: uppercase; opacity: .7; }
+.game-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: oklch(0.3 0.05 230 / 0.25); backdrop-filter: blur(4px); }
+.game-card { background: var(--game-cream); color: var(--game-ink); border-radius: 2rem; padding: 2rem 1.75rem; text-align: center; max-width: 20rem; box-shadow: 0 20px 50px oklch(0.3 0.05 230 / 0.3); }
+.game-title { font-size: 2.6rem; font-weight: 900; color: var(--game-coral); }
+.game-final { font-size: 1.4rem; font-weight: 800; margin-top: .25rem; }
+.game-help { font-size: .9rem; opacity: .8; margin: 1rem 0 1.5rem; line-height: 1.5; }
+.game-btn { background: var(--game-coral); color: var(--game-cream); font-weight: 900; font-size: 1.3rem; padding: .8rem 2.5rem; border-radius: 999px; box-shadow: 0 6px 0 oklch(0.55 0.15 35); }
+.game-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 oklch(0.55 0.15 35); }
