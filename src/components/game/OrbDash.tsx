@@ -378,7 +378,53 @@ export function OrbDash() {
 
       {overlay && (
         <div className="game-overlay" onPointerDown={stop} onPointerUp={stop}>
-          {panel === "settings" ? (
+          {panel === "coach" ? (
+            <div className="game-card">
+              <h2 className="game-subtitle">Coach tip</h2>
+              <div className="game-coach-grid">
+                <label className="game-label">Score
+                  <input className="game-input" type="number" inputMode="numeric" min={0} value={coachIn.score} onChange={(e) => setCoachIn({ ...coachIn, score: e.target.value })} />
+                </label>
+                <label className="game-label">Gems
+                  <input className="game-input" type="number" inputMode="numeric" min={0} value={coachIn.gems} onChange={(e) => setCoachIn({ ...coachIn, gems: e.target.value })} />
+                </label>
+                <label className="game-label">Hits
+                  <input className="game-input" type="number" inputMode="numeric" min={0} value={coachIn.hits} onChange={(e) => setCoachIn({ ...coachIn, hits: e.target.value })} />
+                </label>
+              </div>
+              {tip && (
+                <div className="game-challenge">
+                  <strong>Focus: {tip.focus}</strong>
+                  <span>{tip.tip}</span>
+                </div>
+              )}
+              {coachError && <p className="game-error">{coachError}</p>}
+              <button className="game-btn" disabled={coachBusy} onClick={askCoach}>{coachBusy ? "Thinking…" : tip ? "Another tip" : "Get my tip"}</button>
+              <button className="game-link" onClick={() => setPanel("none")}>Back</button>
+            </div>
+          ) : panel === "history" ? (
+            <div className="game-card">
+              <h2 className="game-subtitle">Run history</h2>
+              {(() => { const st = summarize(history); return (
+                <div className="game-goal-list">
+                  {st.runs} runs · best {st.best} · avg {st.avg}{st.challengesTried > 0 && ` · challenges ${st.challengesWon}/${st.challengesTried}`}
+                </div>
+              ); })()}
+              <div className="game-history">
+                {history.length === 0 && <p className="game-help">No runs yet. Play one!</p>}
+                {history.map((r) => (
+                  <div key={r.at} className="game-history-row">
+                    <span className="game-history-score">{r.score}</span>
+                    <span>◆ {r.gems}</span>
+                    <span className="game-history-name">{r.challenge}{r.won !== null && (r.won ? " ✓" : " ✗")}</span>
+                    <span className="game-history-date">{new Date(r.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                  </div>
+                ))}
+              </div>
+              {history.length > 0 && <button className="game-link" onClick={clearHistory}>Clear history</button>}
+              <button className="game-btn" onClick={() => setPanel("none")}>Done</button>
+            </div>
+          ) : panel === "settings" ? (
             <div className="game-card">
               <h2 className="game-subtitle">Settings</h2>
               <div className="game-stack">
@@ -433,8 +479,10 @@ export function OrbDash() {
                 <button className="game-btn" onClick={() => start()}>{phase === "menu" ? "Play" : "Again"}</button>
               )}
               <div className="game-row">
+                {(phase === "over" || phase === "won") && <button className="game-pill" onClick={() => setPanel("coach")}>✦ Coach tip</button>}
                 {phase !== "paused" && <button className="game-pill" onClick={() => setPanel("ai")}>✦ AI challenge</button>}
                 {goals && phase !== "paused" && <button className="game-pill" onClick={() => setChallenge(CLASSIC)}>Classic</button>}
+                {phase !== "paused" && <button className="game-pill" onClick={() => setPanel("history")}>History</button>}
                 <button className="game-pill" onClick={() => setPanel("settings")}>Settings</button>
               </div>
             </div>
