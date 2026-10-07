@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { CLASSIC, STYLES, type Challenge } from "@/lib/challenge";
 import { createChallenge } from "@/lib/challenge.functions";
 import { GameAudio } from "@/lib/audio";
+import { getCoachTip } from "@/lib/coach.functions";
+import { addRun, parseHistory, summarize, HISTORY_KEY, type RunRecord } from "@/lib/history";
 
 const LANE_X = [-2.2, 0, 2.2];
 const laneX = (l: number) => LANE_X[l] ?? 0;
@@ -190,16 +192,22 @@ export function OrbDash() {
   const [best, setBest] = useState(0);
   const [music, setMusic] = useState(false);
   const [sfx, setSfx] = useState(false);
-  const [panel, setPanel] = useState<"none" | "settings" | "ai">("none");
+  const [panel, setPanel] = useState<"none" | "settings" | "ai" | "coach" | "history">("none");
   const [target, setTarget] = useState("1500");
   const [style, setStyle] = useState(STYLES[1] ?? "");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [history, setHistory] = useState<RunRecord[]>([]);
+  const [coachIn, setCoachIn] = useState({ score: "", gems: "", hits: "1" });
+  const [tip, setTip] = useState<{ focus: string; tip: string } | null>(null);
+  const [coachBusy, setCoachBusy] = useState(false);
+  const [coachError, setCoachError] = useState("");
 
   const getAudio = () => (audio.current ??= new GameAudio());
 
   useEffect(() => {
     setBest(Number(localStorage.getItem("orbdash-best") || 0));
+    setHistory(parseHistory(localStorage.getItem(HISTORY_KEY)));
     const mobile = window.matchMedia("(pointer: coarse)").matches;
     const m = localStorage.getItem("orbdash-music");
     const f = localStorage.getItem("orbdash-sfx");
@@ -288,9 +296,34 @@ export function OrbDash() {
     const sc = Math.floor(s.current.score);
     setHud((h) => ({ ...h, score: sc, gems: s.current.gems, bars: s.current.bars }));
     setBest((b) => { const nb = Math.max(b, sc); localStorage.setItem("orbdash-best", String(nb)); return nb; });
+    const run: RunRecord = {
+      at: Date.now(), score: sc, gems: s.current.gems, bars: s.current.bars, hits: won ? 0 : 1,
+      challenge: s.current.cfg.title, won: hasGoals(s.current.cfg) ? won : null,
+    };
+    setHistory((l) => { const nl = addRun(l, run); localStorage.setItem(HISTORY_KEY, JSON.stringify(nl)); return nl; });
+    setCoachIn({ score: String(sc), gems: String(run.gems), hits: String(run.hits) });
+    setTip(null);
     if (won) getAudio().play("win");
     setPhase(won ? "won" : "over");
   };
+
+  const askCoach = async () => {
+    setCoachBusy(true);
+    setCoachError("");
+    try {
+      const res = await getCoachTip({ data: {
+        score: Number(coachIn.score) || 0, gems: Number(coachIn.gems) || 0, hits: Number(coachIn.hits) || 0,
+        best, challenge: challenge.title,
+      } });
+      if (res.ok) setTip({ focus: res.focus, tip: res.tip }); else setCoachError(res.error);
+    } catch {
+      setCoachError("Couldn't reach the coach. Check your connection and try again.");
+    } finally {
+      setCoachBusy(false);
+    }
+  };
+
+  const clearHistory = () => { setHistory([]); localStorage.removeItem(HISTORY_KEY); };
 
   const generate = async () => {
     setAiBusy(true);
