@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { CLASSIC, STYLES, type Challenge } from "@/lib/challenge";
 import { createChallenge } from "@/lib/challenge.functions";
@@ -35,7 +35,7 @@ const goalsMet = (g: Shared) =>
 
 type Hud = { score: number; gems: number; bars: number; countdown: number };
 
-function World({ s, onTick, onEnd, sfx }: {
+const World = memo(function World({ s, onTick, onEnd, sfx }: {
   s: React.MutableRefObject<Shared>;
   onTick: (h: Hud) => void;
   onEnd: (won: boolean) => void;
@@ -170,7 +170,7 @@ function World({ s, onTick, onEnd, sfx }: {
       </group>
     </>
   );
-}
+});
 
 const stop = (e: React.PointerEvent) => e.stopPropagation();
 
@@ -204,11 +204,13 @@ export function OrbDash() {
   const [coachError, setCoachError] = useState("");
 
   const getAudio = () => (audio.current ??= new GameAudio());
+  const [lite, setLite] = useState(false);
 
   useEffect(() => {
     setBest(Number(localStorage.getItem("orbdash-best") || 0));
     setHistory(parseHistory(localStorage.getItem(HISTORY_KEY)));
     const mobile = window.matchMedia("(pointer: coarse)").matches;
+    setLite(mobile);
     const m = localStorage.getItem("orbdash-music");
     const f = localStorage.getItem("orbdash-sfx");
     setMusic(m === null ? !mobile : m === "1");
@@ -339,22 +341,27 @@ export function OrbDash() {
     }
   };
 
+  const endRef = useRef(onEnd);
+  endRef.current = onEnd;
+  const onEndStable = useCallback((w: boolean) => endRef.current(w), []);
+  const sfxStable = useCallback((n: "gem" | "crash") => getAudio().play(n), []);
+
   const goals = hasGoals(challenge);
   const overlay = phase !== "play" || panel !== "none";
 
   return (
     <div className="game-root" onPointerDown={onDown} onPointerUp={onUp}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 4, 7], fov: 60 }}>
+      <Canvas shadows={!lite} dpr={lite ? [1, 1.25] : [1, 2]} gl={{ antialias: !lite, powerPreference: "high-performance" }} camera={{ position: [0, 4, 7], fov: 60 }}>
         <color attach="background" args={["#ffd9c2"]} />
         <fog attach="fog" args={["#ffd9c2", 25, 75]} />
         <ambientLight intensity={0.6} />
-        <directionalLight position={[6, 12, 6]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]}
+        <directionalLight position={[6, 12, 6]} intensity={1.6} castShadow shadow-mapSize={lite ? [512, 512] : [1024, 1024]}
           shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-30} />
         <Environment>
           <Lightformer intensity={2} position={[0, 5, 0]} scale={[10, 10, 1]} />
           <Lightformer intensity={1} color="#ffc0a0" position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 1, 1]} />
         </Environment>
-        <World s={s} onTick={setHud} onEnd={onEnd} sfx={(n) => getAudio().play(n)} />
+        <World s={s} onTick={setHud} onEnd={onEndStable} sfx={sfxStable} />
       </Canvas>
 
       <div className="game-hud">
